@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production build outputs
+dist/
+build/
+*/dist/
+*/build/
+
+# Environment files (never commit secrets)
+.env
+.env.local
+.env.*.local
+*.env
+!*.env.example
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+
+# Editor & OS files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# Vercel deployment cache
+.vercel/
+*/.vercel/
+
+# Test coverage
+coverage/
+*/coverage/

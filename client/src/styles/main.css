@@ -1,0 +1,131 @@
+/* ==========================================================================
+   CINEAI PRODUCTION MAIN ENTRY POINT
+   Theme Tokens, Base Reset, Component System & Typography
+   ========================================================================== */
+
+@import './theme.css';
+@import './components.css';
+
+/* Global Box Sizing Reset */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  background-color: var(--cine-bg);
+  color: var(--cine-text);
+  font-family: var(--cine-font-sans);
+  overflow-x: hidden;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  background: none;
+  font-family: inherit;
+  color: inherit;
+}
+
+input, select, textarea {
+  font-family: inherit;
+}
+
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* Minimalist Cinema Scrollbar */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--cine-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--cine-border);
+  border-radius: var(--cine-radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--cine-border-hover);
+}
+
+/* Typography Utility Classes */
+.cine-display-title {
+  font-family: var(--cine-font-display);
+  font-size: clamp(2.8rem, 6.5vw, 5.2rem);
+  font-weight: 800;
+  line-height: 0.96;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  color: var(--cine-text);
+}
+
+.cine-h1 {
+  font-family: var(--cine-font-display);
+  font-size: clamp(1.8rem, 3.5vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  color: var(--cine-text);
+}
+
+.cine-h2 {
+  font-family: var(--cine-font-display);
+  font-size: clamp(1.4rem, 2.5vw, 1.875rem);
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--cine-text);
+}
+
+.cine-h3 {
+  font-family: var(--cine-font-display);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.35;
+  color: var(--cine-text);
+}
+
+.cine-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cine-accent);
+}
+
+.cine-subtitle {
+  color: var(--cine-muted);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
+.cine-body {
+  color: var(--cine-text-secondary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+}
+
+.cine-body-muted {
+  color: var(--cine-muted);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}

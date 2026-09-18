@@ -97,13 +97,17 @@ setupSocketHandlers(io);
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
+const isServerless = !!(process.env.VERCEL || process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME);
 
-// Connect to DB and start server
-connectDB().then(() => {
-  server.listen(PORT, () => {
-    console.log(`[CineAI Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
-    console.log(`[CineAI Server] Health endpoint: http://localhost:${PORT}/api/health`);
+// Connect to DB and start HTTP server when running standalone
+if (!isServerless && process.env.NODE_ENV !== 'test') {
+  connectDB().then(() => {
+    server.listen(PORT, () => {
+      console.log(`[CineAI Server] Running in ${process.env.NODE_ENV || 'development'} mode on port ${PORT}`);
+      console.log(`[CineAI Server] Health endpoint: http://localhost:${PORT}/api/health`);
+    });
   });
-});
+}
 
 export { app, server, io };
+export default app;

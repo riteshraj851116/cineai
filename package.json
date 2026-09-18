@@ -2,16 +2,37 @@
   "name": "cineai-monorepo",
   "version": "1.0.0",
   "description": "CineAI - AI-Powered Production Movie Ticket Booking Platform",
-  "private": true,
+  "type": "module",
+  "main": "api/index.js",
   "scripts": {
-    "build": "npm --prefix client run build",
+    "build": "cd client && npm install --include=dev && npm run build",
     "client:dev": "npm --prefix client run dev",
     "client:build": "npm --prefix client run build",
     "server:dev": "npm --prefix server run dev",
     "server:start": "npm --prefix server start",
     "seed": "npm --prefix server run seed"
   },
-  "keywords": ["mern", "react", "vite", "socket-io", "ai", "booking", "cinema"],
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^17.3.1",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.9.5",
+    "morgan": "^1.10.0",
+    "qrcode": "^1.5.4",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
+  },
+  "keywords": [
+    "mern",
+    "react",
+    "vite",
+    "socket-io",
+    "ai",
+    "booking",
+    "cinema"
+  ],
   "author": "CineAI",
   "license": "ISC"
 }

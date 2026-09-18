@@ -22,7 +22,7 @@ export class SeatLockService {
   /**
    * Attempt to lock an array of seat IDs for a given show
    */
-  static async lockSeats(showId, seatIds, lockedById) {
+  static async lockSeats(showId, seatIds, lockedById, socketId = null) {
     await this.cleanExpiredLocks(showId);
 
     const show = await Show.findById(showId);
@@ -38,23 +38,31 @@ export class SeatLockService {
     }
 
     const now = new Date();
-    // Check if any seat is currently locked by someone else
+    // Check if any seat is currently locked by someone else (not by this user and not by this user's socket)
     for (const seatId of seatIds) {
       const activeLock = show.lockedSeats.find(
-        (lock) => lock.seatId === seatId && new Date(lock.expiresAt) > now && String(lock.lockedBy) !== String(lockedById)
+        (lock) =>
+          lock.seatId === seatId &&
+          new Date(lock.expiresAt) > now &&
+          String(lock.lockedBy) !== String(lockedById) &&
+          (!socketId || String(lock.lockedBy) !== String(socketId))
       );
       if (activeLock) {
         throw new Error(`Seat ${seatId} is temporarily reserved by another guest.`);
       }
     }
 
-    // Filter out existing locks by this user for the seats to refresh TTL
+    // Filter out existing locks by this user or their socket to refresh TTL and claim permanently
     const expiryDate = new Date(Date.now() + SEAT_LOCK_TTL_SECONDS * 1000);
     show.lockedSeats = show.lockedSeats.filter(
-      (lock) => !(seatIds.includes(lock.seatId) && String(lock.lockedBy) === String(lockedById))
+      (lock) =>
+        !(
+          seatIds.includes(lock.seatId) &&
+          (String(lock.lockedBy) === String(lockedById) || (socketId && String(lock.lockedBy) === String(socketId)))
+        )
     );
 
-    // Add new locks
+    // Add new locks assigned to the authenticated user ID
     for (const seatId of seatIds) {
       show.lockedSeats.push({
         seatId,

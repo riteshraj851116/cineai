@@ -15,6 +15,7 @@ export const createBookingIntent = async (req, res, next) => {
       seats = [],
       foodItems = [],
       couponCode,
+      socketId,
     } = req.body;
 
     const show = await Show.findById(showId)
@@ -27,8 +28,9 @@ export const createBookingIntent = async (req, res, next) => {
     const seatIds = seats.map((s) => s.seatId);
 
     // Atomically reserve requested seats via TTL lock to prevent race conditions
+    // Allows claiming seats previously held by user's socket session
     try {
-      await SeatLockService.lockSeats(show._id, seatIds, req.user.id);
+      await SeatLockService.lockSeats(show._id, seatIds, req.user.id, socketId);
     } catch (lockErr) {
       return res.status(400).json({ success: false, message: lockErr.message });
     }
@@ -44,11 +46,15 @@ export const createBookingIntent = async (req, res, next) => {
     const bookingReference = `CINE-${Date.now().toString().slice(-6)}-${Math.random().toString(36).substring(2, 6).toUpperCase()}`;
 
     // Persist pending booking order
+    const movieId = show.movie?._id || show.movie;
+    const theatreId = show.theatre?._id || show.theatre;
+    const screenId = show.screen?._id || show.screen;
+
     const booking = await Booking.create({
       user: req.user.id,
-      movie: show.movie._id,
-      theatre: show.theatre._id,
-      screen: show.screen._id,
+      movie: movieId,
+      theatre: theatreId,
+      screen: screenId,
       show: show._id,
       seats: pricing.validatedSeats,
       foodItems: pricing.validatedFood,
@@ -66,6 +72,8 @@ export const createBookingIntent = async (req, res, next) => {
     const orderData = await PaymentService.createOrder({
       amount: pricing.totalAmount,
       receipt: bookingReference,
+      userId: req.user.id,
+      bookingId: booking._id,
     });
 
     res.status(201).json({
@@ -99,6 +107,8 @@ export const confirmBooking = async (req, res, next) => {
       orderId,
       paymentId,
       signature,
+      bookingId: booking._id,
+      userId: req.user?.id,
     });
 
     if (!isValid) {
@@ -109,14 +119,29 @@ export const confirmBooking = async (req, res, next) => {
 
     // Mark seats as permanently occupied in the show
     const seatIds = booking.seats.map((s) => s.seatId);
-    await SeatLockService.confirmSeatsOccupied(booking.show._id, seatIds);
+    const showId = booking.show?._id || booking.show;
+    await SeatLockService.confirmSeatsOccupied(showId, seatIds);
+
+    // Broadcast updated live state to any connected patrons
+    const io = req.app.get('io');
+    if (io) {
+      try {
+        const liveState = await SeatLockService.getLiveSeatState(showId);
+        io.to(`show:${showId}`).emit('seat_state_sync', liveState);
+      } catch (_e) {}
+    }
 
     // Generate cryptographic QR Code data URL
+    const movieTitle = booking.movie?.title || 'CineAI Premiere';
+    const theatreName = booking.theatre?.name || 'CineAI Multiplex';
+    const showDate = booking.show?.date || new Date().toISOString().split('T')[0];
+    const showTimeStr = booking.show?.startTime || 'Evening Show';
+
     const qrPayload = JSON.stringify({
       ref: booking.bookingReference,
-      movie: booking.movie.title,
-      theatre: booking.theatre.name,
-      showTime: `${booking.show.date} ${booking.show.startTime}`,
+      movie: movieTitle,
+      theatre: theatreName,
+      showTime: `${showDate} ${showTimeStr}`,
       seats: seatIds,
       amount: booking.totalAmount,
       verifyHash: Buffer.from(booking.bookingReference + booking._id).toString('base64'),
@@ -137,11 +162,14 @@ export const confirmBooking = async (req, res, next) => {
 
     // Reward loyalty points (10% of total spend) & update user history
     const earnedPoints = Math.floor(booking.totalAmount * 0.1);
+    const userMovieId = booking.movie?._id || booking.movie;
     await User.findByIdAndUpdate(booking.user, {
       $inc: { loyaltyPoints: earnedPoints },
-      $push: {
-        watchHistory: { movie: booking.movie._id, watchedAt: new Date() },
-      },
+      ...(userMovieId ? {
+        $push: {
+          watchHistory: { movie: userMovieId, watchedAt: new Date() },
+        },
+      } : {}),
     });
 
     // If coupon used, increment count
@@ -153,7 +181,7 @@ export const confirmBooking = async (req, res, next) => {
     await Notification.create({
       user: booking.user,
       title: 'Booking Confirmed! 🍿',
-      message: `Your booking for "${booking.movie.title}" at ${booking.theatre.name} (${booking.seats.length} ticket(s)) is confirmed. Ref: ${booking.bookingReference}`,
+      message: `Your booking for "${movieTitle}" at ${theatreName} (${booking.seats.length} ticket(s)) is confirmed. Ref: ${booking.bookingReference}`,
       type: 'booking',
       metadata: { bookingId: booking._id, reference: booking.bookingReference },
     });

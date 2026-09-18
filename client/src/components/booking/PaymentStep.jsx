@@ -19,6 +19,7 @@ export const PaymentStep = ({
   onBack,
   onPay,
   processing,
+  paymentError,
 }) => {
   const [paymentMethod, setPaymentMethod] = useState('card');
   const [cardNumber, setCardNumber] = useState('•••• •••• •••• 4242');
@@ -48,6 +49,27 @@ export const PaymentStep = ({
       </div>
 
       <div className="glass-panel glass-reflection" style={{ maxWidth: '820px', margin: '0 auto', padding: '36px' }}>
+        {/* Payment Error Notice */}
+        {paymentError && (
+          <div
+            style={{
+              padding: '14px 18px',
+              backgroundColor: 'rgba(239, 68, 68, 0.12)',
+              border: '1px solid rgba(239, 68, 68, 0.4)',
+              borderRadius: 'var(--glass-radius-sm)',
+              color: '#FF6B6B',
+              fontSize: '0.85rem',
+              marginBottom: '22px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '10px',
+            }}
+          >
+            <span style={{ fontWeight: 800 }}>⚠️</span>
+            <span>{paymentError}</span>
+          </div>
+        )}
+
         {/* Booking Summary Section */}
         <div style={{ marginBottom: '24px', paddingBottom: '20px', borderBottom: '1px solid var(--glass-border)' }}>
           <div style={{ fontSize: '0.72rem', letterSpacing: '0.12em', color: 'var(--cinema-text-secondary)', textTransform: 'uppercase', marginBottom: '14px', fontWeight: 800 }}>

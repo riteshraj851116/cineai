@@ -6,7 +6,7 @@ import { CineSelect } from '../ui/CineSelect';
 import { CineButton } from '../ui/CineButton';
 import { Mail, Lock, User, Sparkles, AlertCircle } from 'lucide-react';
 
-export const AuthModal = ({ isOpen, onClose, initialMode = 'login' }) => {
+export const AuthModal = ({ isOpen = true, onClose, initialMode = 'login' }) => {
   const [isRegister, setIsRegister] = useState(initialMode === 'register');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

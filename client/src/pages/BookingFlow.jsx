@@ -55,6 +55,7 @@ export const BookingFlow = () => {
 
   // Auth Modal State
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [paymentError, setPaymentError] = useState('');
 
   const { socket } = useSocket();
   const { user } = useAuth();
@@ -142,7 +143,7 @@ export const BookingFlow = () => {
     if (isOccupied) return;
 
     const isLockedByOther = lockedSeats.some(
-      (l) => l.seatId === seat.seatId && l.lockedBy !== socket?.id
+      (l) => l.seatId === seat.seatId && l.lockedBy !== socket?.id && l.lockedBy !== (user?.id || user?._id)
     );
     if (isLockedByOther) {
       alert('THAT SEAT JUST GOT TAKEN. We have refreshed the seating map.');
@@ -161,7 +162,11 @@ export const BookingFlow = () => {
         return;
       }
       updatedSelection = [...selectedSeats, seat];
-      socket?.emit('request_lock_seats', { showId, seatIds: [seat.seatId] });
+      socket?.emit('request_lock_seats', {
+        showId,
+        seatIds: [seat.seatId],
+        userId: user?.id || user?._id,
+      });
     }
 
     setSelectedSeats(updatedSelection);
@@ -283,6 +288,7 @@ export const BookingFlow = () => {
     }
 
     setPaymentProcessing(true);
+    setPaymentError('');
     try {
       const { data: intentData } = await bookingService.createBookingIntent({
         showId,
@@ -291,10 +297,11 @@ export const BookingFlow = () => {
           row: s.row,
           number: s.number,
           category: s.category,
-          price: show.pricing[s.category] || 250,
+          price: show?.pricing?.[s.category] || 250,
         })),
         foodItems: Object.values(cartFood),
         couponCode: appliedCoupon?.code,
+        socketId: socket?.id,
       });
 
       if (!intentData.success) throw new Error('Failed to create booking intent');
@@ -307,7 +314,7 @@ export const BookingFlow = () => {
 
       const { data: confirmData } = await bookingService.confirmBooking({
         bookingId: booking._id,
-        orderId: order.orderId,
+        orderId: order?.orderId,
         paymentId: mockPaymentId,
         signature: mockSignature,
       });
@@ -317,14 +324,18 @@ export const BookingFlow = () => {
           particleCount: 100,
           spread: 70,
           origin: { y: 0.6 },
-          colors: ['#FF4038', '#FFFFFF', '#333333'],
+          colors: ['#00F0FF', '#FFFFFF', '#F59E0B'],
         });
 
         setConfirmedBooking(confirmData.booking);
         setStep('ticket');
+      } else {
+        throw new Error(confirmData.message || 'Payment confirmation failed');
       }
     } catch (err) {
-      alert(err.response?.data?.message || 'Payment processing failed. Please try again.');
+      console.error('Payment checkout error:', err);
+      const errMsg = err.response?.data?.message || err.message || 'Payment processing failed. Please try again.';
+      setPaymentError(errMsg);
     } finally {
       setPaymentProcessing(false);
     }
@@ -463,6 +474,7 @@ export const BookingFlow = () => {
           onBack={() => setStep('food')}
           onPay={handleProceedToPayment}
           processing={paymentProcessing}
+          paymentError={paymentError}
         />
       )}
 
@@ -503,7 +515,7 @@ export const BookingFlow = () => {
       />
 
       {/* Auth Modal Trigger */}
-      {isAuthOpen && <AuthModal onClose={() => setIsAuthOpen(false)} />}
+      {isAuthOpen && <AuthModal isOpen={isAuthOpen} onClose={() => setIsAuthOpen(false)} />}
     </div>
   );
 };

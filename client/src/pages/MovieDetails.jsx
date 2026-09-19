@@ -32,6 +32,9 @@ import {
   ChevronRight,
   ShieldCheck,
   Send,
+  Bot,
+  Volume2,
+  Zap,
 } from 'lucide-react';
 
 export const MovieDetails = () => {
@@ -398,44 +401,118 @@ export const MovieDetails = () => {
 
           {/* Right: AI Movie Insight Dossier */}
           <div>
-            <CineCard style={{ padding: '28px' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--cine-accent)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '10px' }}>
-                <Sparkles size={14} /> CINEAI INTELLIGENCE DOSSIER
+            <CineCard style={{ padding: '26px', background: 'rgba(18, 20, 28, 0.95)', border: '1px solid rgba(225, 29, 72, 0.25)' }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--cine-accent)', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: '8px' }}>
+                <Sparkles size={14} /> CINEAI NEURAL DOSSIER
               </div>
-              <h3 style={{ fontFamily: 'var(--cine-font-display)', fontSize: '1.25rem', fontWeight: 700, marginBottom: '16px' }}>
-                WHY WATCH THIS MASTERPIECE
+              <h3 style={{ fontFamily: 'var(--cine-font-display)', fontSize: '1.25rem', fontWeight: 800, marginBottom: '16px', color: '#FFFFFF' }}>
+                EXHIBITION & ACOUSTIC CALIBRATION
               </h3>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', fontSize: '0.875rem' }}>
                 <div style={{ display: 'flex', gap: '12px' }}>
                   <ShieldCheck size={18} color="var(--cine-accent)" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <strong style={{ color: '#FFFFFF' }}>Audience Sentiment: </strong>
+                    <strong style={{ color: '#FFFFFF' }}>Audience Consensus: </strong>
                     <span style={{ color: 'var(--cine-text-secondary)' }}>
-                      94% of verified patrons praised the auditory soundstage and Denis Villeneuve's worldbuilding scale.
+                      {(rating * 10).toFixed(0)}% verified patron acclaim. Praised for high kinetic scale, worldbuilding depth, and sensory intensity.
                     </span>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px' }}>
-                  <Sparkles size={18} color="var(--cine-gold)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <Zap size={18} color="var(--cine-gold)" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <strong style={{ color: '#FFFFFF' }}>Optimal Format: </strong>
+                    <strong style={{ color: '#FFFFFF' }}>Optimal Exhibition Format: </strong>
                     <span style={{ color: 'var(--cine-text-secondary)' }}>
-                      Captured natively with IMAX digital cameras; 1.43:1 expanded aspect ratio provides 40% more picture in dual-laser auditoriums.
+                      {formats.includes('IMAX')
+                        ? 'Mastered for IMAX dual-laser screens; expanded 1.43:1 aspect ratio provides up to 40% more visible image area.'
+                        : formats.includes('4DX')
+                        ? 'Mastered for 4DX environmental simulation, synchronized motion, and atmospheric cinema effects.'
+                        : 'Optimized for Dolby Cinema 4K Laser with 1,000,000:1 ultra-high dynamic contrast ratio.'}
                     </span>
                   </div>
                 </div>
 
                 <div style={{ display: 'flex', gap: '12px' }}>
-                  <Star size={18} color="var(--cine-emerald)" style={{ flexShrink: 0, marginTop: '2px' }} />
+                  <Volume2 size={18} color="#06B6D4" style={{ flexShrink: 0, marginTop: '2px' }} />
                   <div>
-                    <strong style={{ color: '#FFFFFF' }}>Prime Sightline Advice: </strong>
+                    <strong style={{ color: '#FFFFFF' }}>Acoustic Sweet Spot: </strong>
                     <span style={{ color: 'var(--cine-text-secondary)' }}>
-                      For maximum sensory submersion, select Rows E–G in center focal position.
+                      For calibrated Dolby Atmos 64-channel spatial sound, reserve Rows D through F in the center seating axis to avoid acoustic phase cancellation.
                     </span>
                   </div>
                 </div>
+
+                {/* Sensory Radar Scores */}
+                <div style={{ marginTop: '8px', padding: '14px', background: 'rgba(255, 255, 255, 0.03)', borderRadius: '12px', border: '1px solid rgba(255, 255, 255, 0.06)' }}>
+                  <div style={{ fontSize: '0.72rem', color: '#94A3B8', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '10px' }}>
+                    Sensory Fidelity Breakdown
+                  </div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '3px', fontWeight: 700 }}>
+                        <span>Visual Grandeur & CGI</span>
+                        <span style={{ color: '#06B6D4' }}>98%</span>
+                      </div>
+                      <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: '98%', height: '100%', background: 'linear-gradient(90deg, #E11D48, #06B6D4)' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '3px', fontWeight: 700 }}>
+                        <span>Soundscape & Sub-Bass</span>
+                        <span style={{ color: '#F1B24A' }}>96%</span>
+                      </div>
+                      <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: '96%', height: '100%', background: '#F1B24A' }} />
+                      </div>
+                    </div>
+                    <div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', marginBottom: '3px', fontWeight: 700 }}>
+                        <span>Pacing & Immersion</span>
+                        <span style={{ color: '#10B981' }}>92%</span>
+                      </div>
+                      <div style={{ height: '4px', background: 'rgba(255, 255, 255, 0.1)', borderRadius: '2px', overflow: 'hidden' }}>
+                        <div style={{ width: '92%', height: '100%', background: '#10B981' }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* AI Interactive Chat CTA */}
+                <button
+                  type="button"
+                  onClick={() => navigate(`/ai?mode=chat&query=${encodeURIComponent(`Tell me about ${title} and showtimes in ${selectedCity}`)}`)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    background: 'rgba(225, 29, 72, 0.12)',
+                    border: '1px solid rgba(225, 29, 72, 0.35)',
+                    color: '#FFF',
+                    fontWeight: 700,
+                    fontSize: '0.8rem',
+                    cursor: 'pointer',
+                    marginTop: '4px',
+                    transition: 'all 0.2s ease',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = '#E11D48';
+                    e.currentTarget.style.borderColor = '#E11D48';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'rgba(225, 29, 72, 0.12)';
+                    e.currentTarget.style.borderColor = 'rgba(225, 29, 72, 0.35)';
+                  }}
+                >
+                  <Bot size={15} color="#06B6D4" />
+                  <span>Ask CineAI About {title}</span>
+                </button>
               </div>
             </CineCard>
           </div>

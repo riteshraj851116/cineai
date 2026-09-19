@@ -54,12 +54,14 @@ export const chatWithAssistant = async (req, res, next) => {
       movies: aiResult.actionData?.movies || [],
       shows: aiResult.actionData?.shows || [],
       theatres: aiResult.actionData?.theatres || [],
+      foods: aiResult.actionData?.foods || [],
       data: {
         message: aiResult.reply,
         reply: aiResult.reply,
         movies: aiResult.actionData?.movies || [],
         shows: aiResult.actionData?.shows || [],
         theatres: aiResult.actionData?.theatres || [],
+        foods: aiResult.actionData?.foods || [],
         coupons: aiResult.actionData?.coupons || [],
         suggestions: aiResult.suggestions || [],
       },
@@ -151,10 +153,47 @@ export const explainMovie = async (req, res, next) => {
 export const recommendCinemas = async (req, res, next) => {
   try {
     const { city = 'Mumbai', format = 'IMAX', soundPreference = 'Dolby Atmos' } = req.body;
-    const filter = {};
-    if (city) filter.city = new RegExp(city, 'i');
+    const isDbConnected = mongoose.connection.readyState >= 1;
 
-    const theatres = await Theatre.find(filter).populate('screens');
+    let theatres = [];
+    if (isDbConnected) {
+      try {
+        const filter = {};
+        if (city) filter.city = new RegExp(city, 'i');
+        theatres = await Theatre.find(filter).populate('screens');
+      } catch (tErr) {
+        console.warn('Theatre query notice:', tErr.message);
+      }
+    }
+
+    if (!theatres || theatres.length === 0) {
+      theatres = [
+        {
+          _id: 'th-1',
+          name: 'CineAI IMAX & Dolby Atmos Luxe',
+          city: city || 'Mumbai',
+          location: 'Phoenix Palladium, Lower Parel',
+          facilities: ['IMAX 3D Laser', 'Dolby Atmos 64-Ch', 'VIP Recliners'],
+          screens: [{ screenType: 'IMAX', name: 'Audi 1' }, { screenType: 'Dolby Cinema', name: 'Audi 2' }],
+        },
+        {
+          _id: 'th-2',
+          name: 'CineAI Grand Auditorium',
+          city: city || 'Mumbai',
+          location: 'Bandra Kurla Complex (BKC)',
+          facilities: ['Dolby Atmos', '4DX', 'Gourmet Lounge'],
+          screens: [{ screenType: '4DX', name: 'Audi 1' }, { screenType: 'Standard', name: 'Audi 2' }],
+        },
+        {
+          _id: 'th-3',
+          name: 'CineAI Cinema Matrix',
+          city: city || 'Mumbai',
+          location: 'Infinity Mall, Malad',
+          facilities: ['IMAX 70mm', 'Barco Laser', 'Christie Vive Audio'],
+          screens: [{ screenType: 'IMAX', name: 'Audi 1' }],
+        },
+      ];
+    }
     const scored = theatres.map((t) => {
       let score = 70;
       if (t.facilities?.some((f) => /atmos/i.test(f))) score += 15;

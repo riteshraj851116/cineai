@@ -20,29 +20,105 @@ import {
   Clock,
   MapPin,
   ExternalLink,
+  Mic,
+  MicOff,
+  Volume2,
+  VolumeX,
+  UtensilsCrossed,
 } from 'lucide-react';
 
 export const CineAIAssistant = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speakingIdx, setSpeakingIdx] = useState(null);
 
   const { user } = useAuth();
   const { selectedCity } = useCity();
   const messagesEndRef = useRef(null);
+  const recognitionRef = useRef(null);
   const navigate = useNavigate();
 
   const initialGreeting = user
-    ? `Welcome back, ${user.name.split(' ')[0]}! I'm CineAI, your neural cinema concierge. Ask me for IMAX screenings in ${selectedCity || 'Mumbai'}, personalized movie picks, acoustic sweet spots, or booking status.`
-    : `Hello! I'm CineAI, your personal cinema concierge. I can find IMAX shows, recommend movies tailored to your taste, locate acoustic sweet spot seats, or check today's offers. What would you like to explore?`;
+    ? `Welcome back, ${user.name.split(' ')[0]}! I'm CineAI, your neural cinema concierge. Ask me for IMAX screenings in ${selectedCity || 'Mumbai'}, personalized movie picks, acoustic sweet spots, snacks menu, or booking status.`
+    : `Hello! I'm CineAI, your personal cinema concierge. I can find IMAX shows, recommend movies tailored to your taste, locate acoustic sweet spot seats, show food snacks, or check today's offers. What would you like to explore?`;
 
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
       content: initialGreeting,
-      suggestions: ['Top Rated Movies', 'Hindi Action Movies', 'Show Today Offers', 'Recommend IMAX'],
+      suggestions: ['Top Rated Movies', 'Hindi Action Movies', 'What Snacks Do You Have?', 'Audi 1 Sound Quality', 'Show Today Offers'],
     },
   ]);
+
+  // Voice Dictation (Speech-to-Text)
+  const toggleVoiceRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice recognition is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setInputMessage(transcript);
+        setIsListening(false);
+        handleSendMessage(transcript);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn('Speech recognition error:', err);
+      setIsListening(false);
+    }
+  };
+
+  // Voice Narration (Text-to-Speech)
+  const handleSpeakMessage = (text, idx) => {
+    if (!window.speechSynthesis) return;
+
+    if (speakingIdx === idx) {
+      window.speechSynthesis.cancel();
+      setSpeakingIdx(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[*#_`•\n]/g, ' ');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setSpeakingIdx(null);
+    utterance.onerror = () => setSpeakingIdx(null);
+    setSpeakingIdx(idx);
+    window.speechSynthesis.speak(utterance);
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -218,6 +294,23 @@ export const CineAIAssistant = () => {
                     {m.content}
                   </div>
 
+                  {m.role === 'assistant' && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px', paddingLeft: '4px' }}>
+                      <button
+                        type="button"
+                        onClick={() => handleSpeakMessage(m.content, idx)}
+                        className={`assistant-voice-speak-btn ${speakingIdx === idx ? 'active' : ''}`}
+                        title={speakingIdx === idx ? 'Stop narration' : 'Listen to CineAI audio narration'}
+                        aria-label="Listen to message"
+                      >
+                        {speakingIdx === idx ? <VolumeX size={12} color="#E11D48" /> : <Volume2 size={12} />}
+                        <span style={{ fontSize: '0.68rem', marginLeft: '3px', fontWeight: 600 }}>
+                          {speakingIdx === idx ? 'Stop Audio' : 'Play Voice'}
+                        </span>
+                      </button>
+                    </div>
+                  )}
+
                   {/* Structured Action Data Cards */}
                   {m.actionData && (
                     <div className="ai-action-card">
@@ -384,6 +477,87 @@ export const CineAIAssistant = () => {
                         </div>
                       )}
 
+                      {/* FOOD MENU ACTION */}
+                      {m.actionData.type === 'FOOD_MENU' && m.actionData.foods?.length > 0 && (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
+                          {m.actionData.foods.map((food, fIdx) => (
+                            <div
+                              key={fIdx}
+                              className="ai-food-card"
+                              style={{ padding: '8px', display: 'flex', flexDirection: 'column' }}
+                            >
+                              {food.image && (
+                                <img
+                                  src={food.image}
+                                  alt={food.name}
+                                  style={{ width: '100%', height: '65px', objectFit: 'cover', borderRadius: '8px', marginBottom: '6px' }}
+                                />
+                              )}
+                              <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#FFFFFF', lineHeight: 1.2 }}>
+                                {food.name}
+                              </div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '6px' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 900, color: '#F1B24A' }}>₹{food.price}</span>
+                                <span style={{ fontSize: '0.65rem', padding: '2px 4px', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.08)', color: '#94A3B8' }}>{food.category}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  navigate('/movies');
+                                  setIsOpen(false);
+                                }}
+                                style={{
+                                  marginTop: '6px',
+                                  background: 'rgba(241, 178, 74, 0.15)',
+                                  border: '1px solid #F1B24A',
+                                  color: '#F1B24A',
+                                  padding: '4px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.68rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                  textAlign: 'center',
+                                }}
+                              >
+                                Pre-order
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* THEATRE LIST ACTION */}
+                      {m.actionData.type === 'THEATRE_LIST' && m.actionData.theatres?.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                          {m.actionData.theatres.map((th, tIdx) => (
+                            <div
+                              key={tIdx}
+                              onClick={() => {
+                                navigate('/movies');
+                                setIsOpen(false);
+                              }}
+                              className="ai-movie-chip-card"
+                              style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '6px' }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                                <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#FFFFFF' }}>{th.name}</div>
+                                <span style={{ fontSize: '0.7rem', color: '#06B6D4', fontWeight: 700 }}>{th.city}</span>
+                              </div>
+                              <div style={{ fontSize: '0.74rem', color: '#94A3B8' }}>{th.location}</div>
+                              {th.facilities?.length > 0 && (
+                                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', marginTop: '2px' }}>
+                                  {th.facilities.map((f, fIdx) => (
+                                    <span key={fIdx} style={{ fontSize: '0.65rem', background: 'rgba(6, 182, 212, 0.12)', color: '#06B6D4', padding: '2px 6px', borderRadius: '4px', fontWeight: 600 }}>
+                                      {f}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {/* CONFIRM CANCELLATION */}
                       {m.actionData.type === 'CONFIRM_CANCELLATION' && (
                         <div
@@ -528,9 +702,18 @@ export const CineAIAssistant = () => {
               type="text"
               value={inputMessage}
               onChange={(e) => setInputMessage(e.target.value)}
-              placeholder="Ask for movies, IMAX, tickets, seats..."
+              placeholder={isListening ? "Listening... speak now" : "Ask for movies, IMAX, snacks, seats..."}
               className="assistant-input"
             />
+            <button
+              type="button"
+              onClick={toggleVoiceRecognition}
+              className={`assistant-mic-btn ${isListening ? 'active' : ''}`}
+              title={isListening ? "Listening... click to stop" : "Speak to CineAI"}
+              aria-label="Voice input"
+            >
+              {isListening ? <MicOff size={16} /> : <Mic size={16} />}
+            </button>
             <button
               type="submit"
               disabled={loading || !inputMessage.trim()}

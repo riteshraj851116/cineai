@@ -20,6 +20,10 @@ import {
   ShieldCheck,
   Flame,
   Volume2,
+  VolumeX,
+  Mic,
+  MicOff,
+  UtensilsCrossed,
 } from 'lucide-react';
 import { CineCard } from '../components/ui/CineCard';
 import { CineButton } from '../components/ui/CineButton';
@@ -44,18 +48,89 @@ export const AIPage = () => {
   const [activeTab, setActiveTab] = useState(initialMode === 'terminal' ? 'chat' : initialMode);
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speakingIdx, setSpeakingIdx] = useState(null);
+  const recognitionRef = useRef(null);
 
   // Conversational state
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
       content: user
-        ? `Greetings ${user.name.split(' ')[0]}! I am CineAI Concierge, your neural cinema companion. Ask me for screenings in ${selectedCity || 'Mumbai'}, sound sweet-spot seats, or tailor-made movie recommendations.`
-        : `Greetings! I am CineAI Concierge. What type of cinematic experience are you searching for today? Try asking about IMAX screenings, 2-hour thrillers, or movies with high-octane scores.`,
-      suggestions: ['Sci-Fi in IMAX tonight', 'Action movies with 8+ rating', 'Best acoustic seats in Audi 1', 'Current discount offers'],
+        ? `Greetings ${user.name.split(' ')[0]}! I am CineAI Concierge, your neural cinema companion. Ask me for screenings in ${selectedCity || 'Mumbai'}, sound sweet-spot seats, snacks, or tailor-made movie recommendations.`
+        : `Greetings! I am CineAI Concierge. What type of cinematic experience are you searching for today? Try asking about IMAX screenings, snacks menu, or movies with high-octane scores.`,
+      suggestions: ['Sci-Fi in IMAX tonight', 'Action movies with 8+ rating', 'What snacks do you have?', 'Best acoustic seats in Audi 1', 'Current discount offers'],
     },
   ]);
   const chatBottomRef = useRef(null);
+
+  // Voice Dictation (Speech-to-Text)
+  const toggleVoiceRecognition = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert('Voice recognition is not supported in this browser. Please use Chrome or Edge.');
+      return;
+    }
+
+    if (isListening) {
+      recognitionRef.current?.stop();
+      setIsListening(false);
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event) => {
+        const transcript = event.results[0][0].transcript;
+        setQuery(transcript);
+        setIsListening(false);
+        handleSendChat(transcript);
+      };
+
+      recognition.onerror = () => {
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err) {
+      console.warn('Speech recognition error:', err);
+      setIsListening(false);
+    }
+  };
+
+  // Voice Narration (Text-to-Speech)
+  const handleSpeakMessage = (text, idx) => {
+    if (!window.speechSynthesis) return;
+
+    if (speakingIdx === idx) {
+      window.speechSynthesis.cancel();
+      setSpeakingIdx(null);
+      return;
+    }
+
+    window.speechSynthesis.cancel();
+    const cleanText = text.replace(/[*#_`•\n]/g, ' ');
+    const utterance = new SpeechSynthesisUtterance(cleanText);
+    utterance.rate = 1.05;
+    utterance.pitch = 1.0;
+    utterance.onend = () => setSpeakingIdx(null);
+    utterance.onerror = () => setSpeakingIdx(null);
+    setSpeakingIdx(idx);
+    window.speechSynthesis.speak(utterance);
+  };
 
   // Matchmaker form state
   const [matchMood, setMatchMood] = useState('Thrill');
@@ -130,6 +205,10 @@ export const AIPage = () => {
             intent: data.intent,
             movies: data.movies || data.actionData?.movies || [],
             shows: data.shows || data.actionData?.shows || [],
+            foods: data.foods || data.actionData?.foods || [],
+            theatres: data.theatres || data.actionData?.theatres || [],
+            coupons: data.coupons || data.actionData?.coupons || [],
+            actionData: data.actionData,
             suggestions: data.suggestions || ['Book Now', 'Show All Movies', 'Explore IMAX'],
           },
         ]);
@@ -426,6 +505,124 @@ export const AIPage = () => {
                         {msg.content}
                       </div>
 
+                      {/* Audio Narration for Assistant Messages */}
+                      {msg.role === 'assistant' && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '2px' }}>
+                          <button
+                            type="button"
+                            onClick={() => handleSpeakMessage(msg.content, idx)}
+                            style={{
+                              background: speakingIdx === idx ? 'rgba(225, 29, 72, 0.2)' : 'rgba(255, 255, 255, 0.06)',
+                              border: speakingIdx === idx ? '1px solid #E11D48' : '1px solid rgba(255, 255, 255, 0.12)',
+                              color: speakingIdx === idx ? '#E11D48' : '#06B6D4',
+                              borderRadius: '20px',
+                              padding: '4px 12px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              cursor: 'pointer',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '6px',
+                              transition: 'all 0.15s ease',
+                            }}
+                          >
+                            {speakingIdx === idx ? <VolumeX size={13} /> : <Volume2 size={13} />}
+                            <span>{speakingIdx === idx ? 'Stop Voice' : 'Listen with CineAI Audio'}</span>
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Concession / Snacks Recommendations */}
+                      {msg.foods && msg.foods.length > 0 && (
+                        <div
+                          style={{
+                            display: 'grid',
+                            gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                            gap: '12px',
+                            marginTop: '6px',
+                          }}
+                        >
+                          {msg.foods.map((food, fIdx) => (
+                            <div
+                              key={fIdx}
+                              style={{
+                                background: 'rgba(24, 27, 36, 0.95)',
+                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                borderRadius: '12px',
+                                padding: '10px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '6px',
+                              }}
+                            >
+                              {food.image && (
+                                <img
+                                  src={food.image}
+                                  alt={food.name}
+                                  style={{ width: '100%', height: '80px', objectFit: 'cover', borderRadius: '8px' }}
+                                />
+                              )}
+                              <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#FFF' }}>{food.name}</div>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <span style={{ fontSize: '0.85rem', fontWeight: 900, color: '#F1B24A' }}>₹{food.price}</span>
+                                <span style={{ fontSize: '0.68rem', padding: '2px 6px', borderRadius: '4px', background: 'rgba(255, 255, 255, 0.08)', color: '#94A3B8' }}>{food.category}</span>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={() => navigate('/movies')}
+                                style={{
+                                  marginTop: '4px',
+                                  background: 'rgba(241, 178, 74, 0.15)',
+                                  border: '1px solid #F1B24A',
+                                  color: '#F1B24A',
+                                  padding: '6px',
+                                  borderRadius: '6px',
+                                  fontSize: '0.72rem',
+                                  fontWeight: 700,
+                                  cursor: 'pointer',
+                                }}
+                              >
+                                Pre-order with Ticket
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Theatre / Acoustic Cinema Recommendations */}
+                      {msg.theatres && msg.theatres.length > 0 && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '6px' }}>
+                          {msg.theatres.map((th, tIdx) => (
+                            <div
+                              key={tIdx}
+                              onClick={() => navigate('/movies')}
+                              style={{
+                                background: 'rgba(24, 27, 36, 0.95)',
+                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                borderRadius: '12px',
+                                padding: '12px',
+                                cursor: 'pointer',
+                              }}
+                            >
+                              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div style={{ fontSize: '0.9rem', fontWeight: 800, color: '#FFF' }}>{th.name}</div>
+                                <span style={{ fontSize: '0.72rem', color: '#06B6D4', fontWeight: 700 }}>{th.city}</span>
+                              </div>
+                              <div style={{ fontSize: '0.76rem', color: '#94A3B8', marginTop: '2px' }}>{th.location}</div>
+                              {th.facilities?.length > 0 && (
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                  {th.facilities.map((f, fIdx) => (
+                                    <span key={fIdx} style={{ fontSize: '0.68rem', background: 'rgba(6, 182, 212, 0.12)', color: '#06B6D4', padding: '2px 8px', borderRadius: '4px', fontWeight: 600 }}>
+                                      {f}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       {/* Embedded Interactive Movie Recommendations */}
                       {msg.movies && msg.movies.length > 0 && (
                         <div
@@ -662,6 +859,16 @@ export const AIPage = () => {
                     }}
                   />
                 </div>
+                <button
+                  type="button"
+                  onClick={toggleVoiceRecognition}
+                  className={`assistant-mic-btn ${isListening ? 'active' : ''}`}
+                  title={isListening ? "Listening... click to stop" : "Speak to CineAI Concierge"}
+                  aria-label="Voice input"
+                  style={{ height: '50px', width: '50px' }}
+                >
+                  {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                </button>
                 <button
                   type="submit"
                   disabled={loading || !query.trim()}

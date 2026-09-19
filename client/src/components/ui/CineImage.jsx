@@ -16,7 +16,7 @@ export const CineImage = ({
   className = '',
   style = {},
   placeholder = null,
-  loading = 'lazy',
+  loading = 'eager',
   onLoad,
   onError,
   ...props
@@ -24,18 +24,31 @@ export const CineImage = ({
   const [currentSrc, setCurrentSrc] = useState(src || fallbackSrc);
   const [hasError, setHasError] = useState(false);
   const [isLoaded, setIsLoaded] = useState(false);
+  const imgRef = React.useRef(null);
 
   useEffect(() => {
     if (isValidImageUrl(src)) {
       setCurrentSrc(src);
       setHasError(false);
-      setIsLoaded(false);
+      // Check if image is already loaded or in browser memory cache
+      if (imgRef.current && imgRef.current.complete && imgRef.current.naturalWidth > 0) {
+        setIsLoaded(true);
+      } else {
+        setIsLoaded(false);
+      }
     } else {
       setCurrentSrc(fallbackSrc);
       setHasError(true);
       setIsLoaded(true);
     }
   }, [src, fallbackSrc]);
+
+  const handleRef = (el) => {
+    imgRef.current = el;
+    if (el && el.complete && el.naturalWidth > 0) {
+      setIsLoaded(true);
+    }
+  };
 
   const handleImageError = (e) => {
     if (!hasError && currentSrc !== fallbackSrc) {
@@ -85,6 +98,7 @@ export const CineImage = ({
 
       {/* Primary Image */}
       <img
+        ref={handleRef}
         src={currentSrc}
         alt={alt}
         loading={loading}
@@ -96,7 +110,7 @@ export const CineImage = ({
           objectFit,
           display: 'block',
           opacity: isLoaded ? 1 : 0,
-          transition: 'opacity 0.3s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+          transition: 'opacity 0.25s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
         }}
         {...props}
       />

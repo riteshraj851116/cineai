@@ -21,6 +21,7 @@ router.get('/explain/:movieId', explainMovie);
 router.post('/recommend-cinemas', recommendCinemas);
 router.post('/recommend-showtimes', recommendShowtimes);
 router.post('/mood', discoverByMood);
+router.post('/mood-match', discoverByMood);
 router.get('/review-summary/:movieId', getReviewSummary);
 router.post('/recommend-seats', getSeatRecommendations);
 router.post('/weekend-planner', planWeekend);

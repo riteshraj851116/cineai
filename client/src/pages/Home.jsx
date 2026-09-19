@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import {
   Sparkles,
@@ -42,6 +42,7 @@ export const Home = () => {
   const [aiQuery, setAiQuery] = useState('');
   const [aiSearching, setAiSearching] = useState(false);
   const [aiSearchResult, setAiSearchResult] = useState(null);
+  const aiResultRef = useRef(null);
 
   // Mood filter state
   const [selectedMood, setSelectedMood] = useState('Thrill');
@@ -137,6 +138,9 @@ export const Home = () => {
       });
     } finally {
       setAiSearching(false);
+      setTimeout(() => {
+        aiResultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 80);
     }
   };
 
@@ -491,7 +495,7 @@ export const Home = () => {
 
       {/* AI Search Result Panel (If Query Active) */}
       {aiSearchResult && (
-        <section style={{ backgroundColor: 'var(--cine-surface)', borderBottom: '1px solid var(--cine-border)', padding: '40px 0' }}>
+        <section ref={aiResultRef} style={{ backgroundColor: 'var(--cine-surface)', borderBottom: '1px solid var(--cine-border)', padding: '40px 0' }}>
           <div className="cine-page-container">
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
               <div>

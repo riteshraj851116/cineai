@@ -5,6 +5,7 @@
 
 @import './theme.css';
 @import './components.css';
+@import './ai-assistant.css';
 
 /* Global Box Sizing Reset */
 *, *::before, *::after {

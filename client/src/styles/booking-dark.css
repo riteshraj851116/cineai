@@ -558,38 +558,48 @@
 }
 
 .cinema-seat-node.ai-recommended {
-  outline: 2px solid #FFD700;
-  outline-offset: 1px;
-  animation: pulse-ai-pick 2s infinite ease-in-out;
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.4) 0%, rgba(241, 178, 74, 0.5) 100%) !important;
+  border: 1.5px solid #06B6D4 !important;
+  box-shadow: 0 0 12px rgba(6, 182, 212, 0.65), 0 0 24px rgba(241, 178, 74, 0.35) !important;
+  animation: pulse-ai-pick 1.8s infinite ease-in-out;
+  transform: scale(1.06);
 }
 
 @keyframes pulse-ai-pick {
-  0% {
-    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.5);
+  0%, 100% {
+    box-shadow: 0 0 10px rgba(6, 182, 212, 0.6), 0 0 20px rgba(241, 178, 74, 0.3);
+    border-color: #06B6D4;
   }
   50% {
-    box-shadow: 0 0 0 6px rgba(255, 215, 0, 0);
-  }
-  100% {
-    box-shadow: 0 0 0 0 rgba(255, 215, 0, 0);
+    box-shadow: 0 0 18px rgba(6, 182, 212, 0.9), 0 0 30px rgba(241, 178, 74, 0.6);
+    border-color: #F1B24A;
+    transform: scale(1.1);
   }
 }
 
 .ai-pick-tag {
   position: absolute;
-  top: -16px;
+  top: -18px;
   left: 50%;
   transform: translateX(-50%);
-  font-family: var(--font-mono);
-  font-size: 0.5rem;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 0.56rem;
   font-weight: 900;
-  letter-spacing: 0.05em;
-  background: #FFFFFF;
-  color: #080808;
-  padding: 1px 4px;
-  border-radius: 2px;
+  letter-spacing: 0.06em;
+  background: linear-gradient(135deg, #06B6D4, #F1B24A);
+  color: #000000;
+  padding: 1px 5px;
+  border-radius: 4px;
   white-space: nowrap;
   pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+  z-index: 10;
+}
+
+@media (min-width: 992px) {
+  .acoustic-zone-pill {
+    display: block !important;
+  }
 }
 
 /* Seat Legend */
